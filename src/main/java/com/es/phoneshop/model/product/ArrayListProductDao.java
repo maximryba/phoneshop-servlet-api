@@ -2,9 +2,10 @@ package com.es.phoneshop.model.product;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Currency;
 import java.util.List;
-import java.util.Optional;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -14,71 +15,106 @@ public class ArrayListProductDao implements ProductDao {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private long maxId;
     private final List<Product> products = new ArrayList<>();
+    private final Lock readLock = lock.readLock();
+    private final Lock writeLock = lock.writeLock();
 
     public ArrayListProductDao() {
         saveSampleProducts();
     }
 
     @Override
-    public Product getProduct(Long id) {
-        lock.readLock().lock();
+    public Product getProduct(Long id) throws ProductNotFoundException {
+        readLock.lock();
         try {
             return products.stream()
                     .filter(product -> product.getId().equals(id))
-                    .findFirst()
+                    .findAny()
                     .orElseThrow(() -> new ProductNotFoundException(id));
 
         } finally {
-            lock.readLock().unlock();
+            readLock.unlock();
         }
 
     }
 
     @Override
-    public List<Product> findProducts() {
-        lock.readLock().lock();
+    public List<Product> findProducts(String query) {
+        readLock.lock();
         try {
             return this.products.stream()
+                    .filter(product -> query == null || query.isEmpty() || productHasDescription(product, query))
                     .filter(product -> product.getPrice() != null)
-                    .filter(product -> product.getStock() > 0)
+                    .filter(this::productIsInStock)
+                    .sorted((a, b) -> Integer.compare(countMatchesInQuery(b, query),
+                            countMatchesInQuery(a, query)))
                     .collect(Collectors.toList());
         } finally {
-            lock.readLock().unlock();
+            readLock.unlock();
         }
+
+    }
+
+    private boolean productHasDescription(Product product, String query) {
+        if (query != null) {
+            String[] words = query.split(" ");
+            return Arrays.stream(words)
+                    .allMatch(word -> product.getDescription().toLowerCase().contains(word.toLowerCase()));
+        } else {
+            return true;
+        }
+
+    }
+
+    private int countMatchesInQuery(Product product, String query) {
+        if (query != null) {
+            String[] words = query.split(" ");
+            return (int) Arrays.stream(words)
+                    .filter(word -> product.getDescription().toLowerCase().contains(word.toLowerCase()))
+                    .count();
+        } else {
+            return 0;
+        }
+
+    }
+
+    private boolean productIsInStock(Product product) {
+        return product.getStock() > 0;
     }
 
     @Override
     public void save(Product product) {
-        lock.writeLock().lock();
+        writeLock.lock();
         try {
-            Optional.ofNullable(product.getId())
-                    .map(id -> products.stream()
-                            .filter(pr -> id.equals(pr.getId()))
-                            .findFirst()
-                            .map(existingProduct -> {
-                                int index = products.indexOf(existingProduct);
-                                products.set(index, product);
-                                return existingProduct;
-                            })
-                            .orElseThrow(() -> new ProductNotFoundException(id)))
-                    .orElseGet(() -> {
-                        product.setId(maxId++);
-                        products.add(product);
-                        return product;
-                    });
+            if (product.getId() != null) {
+                int index = -1;
+                for (Product pr : products) {
+                    if (pr.getId().equals(product.getId())) {
+                       index = pr.getId().intValue();
+                    }
+                }
+                if (index != -1) {
+                    products.set(index, product);
+                } else {
+                    throw new ProductNotFoundException(product.getId());
+                }
+            } else {
+                product.setId(maxId++);
+                products.add(product);
+            }
         } finally {
-            lock.writeLock().unlock();
+            writeLock.unlock();
         }
 
     }
 
     @Override
     public void delete(Long id) {
-        lock.writeLock().lock();
+        writeLock.lock();
         try {
-            products.removeIf(product -> product.getId().equals(id));
+            Product foundProduct = getProduct(id);
+            products.remove(foundProduct);
         } finally {
-            lock.writeLock().unlock();
+            writeLock.unlock();
         }
     }
 
