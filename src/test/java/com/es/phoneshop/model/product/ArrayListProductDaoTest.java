@@ -27,7 +27,7 @@ public class ArrayListProductDaoTest
 
     @Test
     public void testFindProductsHaveResults() {
-        assertFalse(productDao.findProducts("").isEmpty());
+        assertFalse(productDao.findProducts("", SortField.description, SortOrder.asc).isEmpty());
     }
 
     @Test
@@ -57,7 +57,7 @@ public class ArrayListProductDaoTest
 
     @Test
     public void testDeleteProduct() {
-        List<Product> products = productDao.findProducts("");
+        List<Product> products = productDao.findProducts("", SortField.description, SortOrder.asc);
 
         productDao.delete(products.get(0).getId());
         assertEquals(12, products.size());
