@@ -1,6 +1,5 @@
 package com.es.phoneshop.model.product;
 
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -48,13 +47,7 @@ public class ArrayListProductDao implements ProductDao {
     public List<Product> findProducts(String query, SortField sortField, SortOrder sortOrder) {
         readLock.lock();
         try {
-            Comparator<Product> comparator = Comparator.comparing(product -> {
-                if (SortField.description == sortField) {
-                    return (Comparable) product.getDescription();
-                } else {
-                    return (Comparable) product.getPrice();
-                }
-            });
+            Comparator<Product> comparator = getProductComparator(sortField);
             boolean asc = sortOrder.name().equals("asc");
             return this.products.stream()
                     .filter(product -> query == null || query.isEmpty() || productHasDescription(product, query))
@@ -67,7 +60,6 @@ public class ArrayListProductDao implements ProductDao {
         } finally {
             readLock.unlock();
         }
-
     }
 
     private boolean productHasDescription(Product product, String query) {
@@ -79,6 +71,17 @@ public class ArrayListProductDao implements ProductDao {
             return true;
         }
 
+    }
+
+    private Comparator<Product> getProductComparator(SortField sortField) {
+        Comparator<Product> comparator = Comparator.comparing(product -> {
+            if (SortField.description == sortField) {
+                return (Comparable) product.getDescription();
+            } else {
+                return (Comparable) product.getPrice();
+            }
+        });
+        return comparator;
     }
 
     private int countMatchesInQuery(Product product, String query) {
