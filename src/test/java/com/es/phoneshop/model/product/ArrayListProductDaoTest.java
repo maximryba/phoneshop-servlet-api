@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
@@ -21,6 +22,14 @@ public class ArrayListProductDaoTest
     @Before
     public void setup() {
         productDao = ArrayListProductDao.getInstance();
+        Currency usd = Currency.getInstance("USD");
+        List<PriceHistory> priceHistories = new ArrayList<>();
+        priceHistories.add(new PriceHistory
+                (1L, BigDecimal.valueOf(50), LocalDate.of(2024, 12, 5), usd));
+        priceHistories.add(new PriceHistory
+                (2L, BigDecimal.valueOf(100), LocalDate.of(2025, 1, 10), usd));
+        productDao.save(new Product( "test-phone", "Test", BigDecimal.valueOf(100), usd, 100, "test", priceHistories));
+        productDao.save(new Product( "test-phone", "Test", BigDecimal.valueOf(100), usd, 100, "test", priceHistories));
     }
 
     @Rule
@@ -59,9 +68,10 @@ public class ArrayListProductDaoTest
     @Test
     public void testDeleteProduct() {
         List<Product> products = productDao.findProducts("", SortField.description, SortOrder.asc);
-
+        int size = products.size();
         productDao.delete(products.get(0).getId());
-        assertEquals(12, products.size());
+        List<Product> productsAfterDelete = productDao.findProducts("", SortField.description, SortOrder.asc);
+        assertEquals(size - 1, productsAfterDelete.size());
     }
 
     @Test

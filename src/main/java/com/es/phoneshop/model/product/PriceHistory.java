@@ -3,7 +3,6 @@ package com.es.phoneshop.model.product;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Currency;
-import java.util.Date;
 
 public class PriceHistory {
     private Long id;
