@@ -1,7 +1,10 @@
 package com.es.phoneshop.model.product;
 
-import java.util.*;
-import java.util.concurrent.locks.Lock;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -24,13 +27,11 @@ public class ArrayListProductDao implements ProductDao {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private long maxId;
     private final List<Product> products;
-    private final Lock readLock = lock.readLock();
-    private final Lock writeLock = lock.writeLock();
 
 
     @Override
-    public Product getProduct(Long id) throws ProductNotFoundException {
-        readLock.lock();
+    public Product getProduct(Long id){
+        lock.readLock().lock();
         try {
             return products.stream()
                     .filter(product -> product.getId().equals(id))
@@ -38,27 +39,27 @@ public class ArrayListProductDao implements ProductDao {
                     .orElseThrow(() -> new ProductNotFoundException(id));
 
         } finally {
-            readLock.unlock();
+            lock.readLock().unlock();
         }
 
     }
 
     @Override
     public List<Product> findProducts(String query, SortField sortField, SortOrder sortOrder) {
-        readLock.lock();
+        lock.readLock().lock();
         try {
             Comparator<Product> comparator = getProductComparator(sortField);
             boolean asc = sortOrder.name().equals("asc");
             return this.products.stream()
                     .filter(product -> query == null || query.isEmpty() || productHasDescription(product, query))
                     .filter(product -> product.getPrice() != null)
-                    .filter(this::productIsInStock)
+                    .filter(product -> product.getStock() > 0)
                     .sorted((a, b) -> Integer.compare(countMatchesInQuery(b, query),
                             countMatchesInQuery(a, query)))
                     .sorted(asc ? comparator : comparator.reversed())
                     .collect(Collectors.toList());
         } finally {
-            readLock.unlock();
+            lock.readLock().unlock();
         }
     }
 
@@ -96,44 +97,38 @@ public class ArrayListProductDao implements ProductDao {
 
     }
 
-    private boolean productIsInStock(Product product) {
-        return product.getStock() > 0;
-    }
-
     @Override
     public void save(Product product) {
-        writeLock.lock();
+        lock.writeLock().lock();
         try {
-            if (product.getId() != null) {
-                int index = -1;
-                for (Product pr : products) {
-                    if (pr.getId().equals(product.getId())) {
-                       index = pr.getId().intValue();
-                    }
-                }
-                if (index != -1) {
-                    products.set(index, product);
-                } else {
-                    throw new ProductNotFoundException(product.getId());
-                }
-            } else {
-                product.setId(maxId++);
-                products.add(product);
-            }
+            Optional.ofNullable(product.getId())
+                    .map(id -> products.stream()
+                            .filter(pr -> id.equals(pr.getId()))
+                            .findFirst()
+                            .map(existingProduct -> {
+                                int index = products.indexOf(existingProduct);
+                                products.set(index, product);
+                                return existingProduct;
+                            })
+                            .orElseThrow(() -> new ProductNotFoundException(id)))
+                    .orElseGet(() -> {
+                        product.setId(maxId++);
+                        products.add(product);
+                        return product;
+                    });
         } finally {
-            writeLock.unlock();
+            lock.writeLock().unlock();
         }
 
     }
 
     @Override
     public void delete(Long id) {
-        writeLock.lock();
+        lock.writeLock().lock();
         try {
-            Product foundProduct = getProduct(id);
-            products.remove(foundProduct);
+            products.removeIf(product -> product.getId().equals(id));
         } finally {
-            writeLock.unlock();
+            lock.writeLock().unlock();
         }
     }
 }
