@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
+import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -14,80 +14,71 @@ public class ArrayListProductDao implements ProductDao {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private long maxId;
     private final List<Product> products = new ArrayList<>();
-    private final Lock readLock = lock.readLock();
-    private final Lock writeLock = lock.writeLock();
 
     public ArrayListProductDao() {
         saveSampleProducts();
     }
 
     @Override
-    public Product getProduct(Long id) throws ProductNotFoundException {
-        readLock.lock();
+    public Product getProduct(Long id) {
+        lock.readLock().lock();
         try {
             return products.stream()
                     .filter(product -> product.getId().equals(id))
-                    .findAny()
-                    .orElseThrow(() -> new ProductNotFoundException("Product with id:" + id + " not found"));
+                    .findFirst()
+                    .orElseThrow(() -> new ProductNotFoundException(id));
 
         } finally {
-            readLock.unlock();
+            lock.readLock().unlock();
         }
 
     }
 
     @Override
     public List<Product> findProducts() {
-        readLock.lock();
+        lock.readLock().lock();
         try {
             return this.products.stream()
                     .filter(product -> product.getPrice() != null)
-                    .filter(this::productIsInStock)
+                    .filter(product -> product.getStock() > 0)
                     .collect(Collectors.toList());
         } finally {
-            readLock.unlock();
+            lock.readLock().unlock();
         }
-
-    }
-
-    private boolean productIsInStock(Product product) {
-        return product.getStock() > 0;
     }
 
     @Override
     public void save(Product product) {
-        writeLock.lock();
+        lock.writeLock().lock();
         try {
-            if (product.getId() != null) {
-                int index = -1;
-                for (Product pr : products) {
-                    if (pr.getId().equals(product.getId())) {
-                       index = pr.getId().intValue();
-                    }
-                }
-                if (index != -1) {
-                    products.set(index, product);
-                } else {
-                    throw new ProductNotFoundException("Product for update not found");
-                }
-            } else {
-                product.setId(maxId++);
-                products.add(product);
-            }
+            Optional.ofNullable(product.getId())
+                    .map(id -> products.stream()
+                            .filter(pr -> id.equals(pr.getId()))
+                            .findFirst()
+                            .map(existingProduct -> {
+                                int index = products.indexOf(existingProduct);
+                                products.set(index, product);
+                                return existingProduct;
+                            })
+                            .orElseThrow(() -> new ProductNotFoundException(id)))
+                    .orElseGet(() -> {
+                        product.setId(maxId++);
+                        products.add(product);
+                        return product;
+                    });
         } finally {
-            writeLock.unlock();
+            lock.writeLock().unlock();
         }
 
     }
 
     @Override
     public void delete(Long id) {
-        writeLock.lock();
+        lock.writeLock().lock();
         try {
-            Product foundProduct = getProduct(id);
-            products.remove(foundProduct);
+            products.removeIf(product -> product.getId().equals(id));
         } finally {
-            writeLock.unlock();
+            lock.writeLock().unlock();
         }
     }
 
