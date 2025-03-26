@@ -17,17 +17,18 @@ public class DemoDataServletContextListener implements ServletContextListener {
 
     private ProductDao productDao;
 
+    private final static String INSERT_DATA_FLAG = "insertDemoData";
+
     public DemoDataServletContextListener() {
         this.productDao = ArrayListProductDao.getInstance();
     }
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-        boolean insertDemoData = Boolean.parseBoolean(sce.getServletContext().getInitParameter("insertDemoData"));
+        boolean insertDemoData = Boolean.parseBoolean(sce.getServletContext().getInitParameter(INSERT_DATA_FLAG));
         if (insertDemoData) {
             saveSampleProducts();
         }
-
     }
 
     @Override

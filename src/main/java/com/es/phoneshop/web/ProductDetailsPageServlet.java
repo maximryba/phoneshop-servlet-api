@@ -2,6 +2,8 @@ package com.es.phoneshop.web;
 
 import com.es.phoneshop.model.product.ArrayListProductDao;
 import com.es.phoneshop.model.product.ProductDao;
+import com.es.phoneshop.model.product.ProductNotFoundException;
+import com.es.phoneshop.utils.UriUtil;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -11,6 +13,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 public class ProductDetailsPageServlet extends HttpServlet {
+    private static final String PRODUCT = "product";
+    private static final String WEB_INF_PAGES_PRODUCT_JSP = "/WEB-INF/pages/product.jsp";
     private ProductDao productDao;
 
     @Override
@@ -21,8 +25,9 @@ public class ProductDetailsPageServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String productId = request.getPathInfo().substring(1);
-        request.setAttribute("product", productDao.getProduct(Long.valueOf(productId)));
-        request.getRequestDispatcher("/WEB-INF/pages/product.jsp").forward(request, response);
+        Long productId = UriUtil.getProductId(request.getRequestURI());
+        request.setAttribute(PRODUCT, productDao.getProduct(productId)
+                .orElseThrow(() -> new ProductNotFoundException(productId)));
+        request.getRequestDispatcher(WEB_INF_PAGES_PRODUCT_JSP).forward(request, response);
     }
 }

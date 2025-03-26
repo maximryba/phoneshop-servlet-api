@@ -3,6 +3,8 @@ package com.es.phoneshop.web;
 import com.es.phoneshop.model.product.ArrayListProductDao;
 import com.es.phoneshop.model.product.PriceHistory;
 import com.es.phoneshop.model.product.ProductDao;
+import com.es.phoneshop.model.product.ProductNotFoundException;
+import com.es.phoneshop.utils.UriUtil;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -14,6 +16,9 @@ import java.util.List;
 
 public class PriceHistoryPageServlet extends HttpServlet {
 
+    private static final String PRODUCT = "product";
+    private static final String PRICE_HISTORIES = "priceHistories";
+    private static final String WEB_INF_PAGES_PRICE_HISTORIES_JSP = "/WEB-INF/pages/priceHistories.jsp";
     private ProductDao productDao;
 
     @Override
@@ -24,11 +29,13 @@ public class PriceHistoryPageServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String productId = request.getPathInfo().substring(1);
-        List<PriceHistory> priceHistories = productDao.getProduct(Long.valueOf(productId)).getPriceHistories();
-        request.setAttribute("product", productDao.getProduct(Long.valueOf(productId)));
-        request.setAttribute("priceHistories", priceHistories);
-        request.getRequestDispatcher("/WEB-INF/pages/priceHistories.jsp").forward(request, response);
+        Long productId = UriUtil.getProductId(request.getRequestURI());
+        List<PriceHistory> priceHistories = productDao.getProduct(productId)
+                .orElseThrow(() -> new ProductNotFoundException(productId)).getPriceHistories();
+        request.setAttribute(PRODUCT, productDao.getProduct(productId)
+                .orElseThrow(() -> new ProductNotFoundException(productId)));
+        request.setAttribute(PRICE_HISTORIES, priceHistories);
+        request.getRequestDispatcher(WEB_INF_PAGES_PRICE_HISTORIES_JSP).forward(request, response);
     }
 
 }

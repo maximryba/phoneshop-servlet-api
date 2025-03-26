@@ -13,9 +13,13 @@ public class ArrayListProductDao implements ProductDao {
 
     private static ProductDao instance;
 
-    public static synchronized ProductDao getInstance() {
+    public static ProductDao getInstance() {
         if (instance == null) {
-            instance = new ArrayListProductDao();
+            synchronized (ProductDao.class) {
+                if (instance == null) {
+                    instance = new ArrayListProductDao();
+                }
+            }
         }
         return instance;
     }
@@ -28,73 +32,95 @@ public class ArrayListProductDao implements ProductDao {
     private long maxId;
     private final List<Product> products;
 
-
     @Override
-    public Product getProduct(Long id){
+    public Optional<Product> getProduct(Long id){
         lock.readLock().lock();
         try {
-            return products.stream()
+            return Optional.ofNullable(products.stream()
                     .filter(product -> product.getId().equals(id))
-                    .findAny()
-                    .orElseThrow(() -> new ProductNotFoundException(id));
+                    .findFirst()
+                    .orElseThrow(() -> new ProductNotFoundException(id)));
 
         } finally {
             lock.readLock().unlock();
         }
-
     }
 
     @Override
     public List<Product> findProducts(String query, SortField sortField, SortOrder sortOrder) {
         lock.readLock().lock();
         try {
-            Comparator<Product> comparator = getProductComparator(sortField);
-            boolean asc = sortOrder.name().equals("asc");
-            return this.products.stream()
-                    .filter(product -> query == null || query.isEmpty() || productHasDescription(product, query))
-                    .filter(product -> product.getPrice() != null)
-                    .filter(product -> product.getStock() > 0)
-                    .sorted((a, b) -> Integer.compare(countMatchesInQuery(b, query),
-                            countMatchesInQuery(a, query)))
-                    .sorted(asc ? comparator : comparator.reversed())
-                    .collect(Collectors.toList());
+            if ((query == null || query.isEmpty()) && sortField != null) {
+                return findProductsWithoutQuery(sortField, sortOrder);
+            } else if (query != null && !query.isEmpty() && sortField == null) {
+                return findProductsWithQueryWithoutSorting(query);
+            } else {
+                return findProductsWithQueryAndSorting(query, sortField, sortOrder);
+            }
         } finally {
             lock.readLock().unlock();
         }
     }
 
-    private boolean productHasDescription(Product product, String query) {
-        if (query != null) {
-            String[] words = query.split(" ");
-            return Arrays.stream(words)
-                    .allMatch(word -> product.getDescription().toLowerCase().contains(word.toLowerCase()));
-        } else {
-            return true;
+    private List<Product> findProductsWithoutQuery(SortField sortField, SortOrder sortOrder) {
+        Comparator<Product> comparator = getProductComparator(sortField);
+        boolean asc = sortOrder.getValue().equals("asc");
+        return this.products.stream()
+                .filter(product -> product.getPrice() != null && product.getStock() > 0)
+                .sorted(asc ? comparator : comparator.reversed())
+                .collect(Collectors.toList());
+    }
+
+    private List<Product> findProductsWithQueryWithoutSorting(String query) {
+        return this.products.stream()
+                .filter(product -> product.getPrice() != null && product.getStock() > 0)
+                .filter(product -> matchDescription(product, query, true) == 1)
+                .sorted((a, b) -> Integer.compare(matchDescription(b, query, false),
+                        matchDescription(a, query, false)))
+                .collect(Collectors.toList());
+    }
+
+    private List<Product> findProductsWithQueryAndSorting(String query, SortField sortField, SortOrder sortOrder) {
+        Comparator<Product> comparator = getProductComparator(sortField);
+        boolean asc = sortOrder.getValue().equals("asc");
+        return this.products.stream()
+                .filter(product -> product.getPrice() != null && product.getStock() > 0)
+                .filter(product -> matchDescription(product, query, true) == 1)
+                .sorted(asc ? comparator : comparator.reversed())
+                .collect(Collectors.toList());
+    }
+
+    private int matchDescription(Product product, String query, boolean checkAll) {
+        if (query == null || query.isEmpty()) {
+            return 1;
         }
 
+        String[] words = query.split(" ");
+        long matchCount = Arrays.stream(words)
+                .filter(word -> product.getDescription().toLowerCase().contains(word.toLowerCase()))
+                .count();
+
+        if (checkAll) {
+            return matchCount == words.length ? 1 : 0;
+        } else {
+            return (int) matchCount;
+        }
     }
 
     private Comparator<Product> getProductComparator(SortField sortField) {
+
+        if (sortField == null) {
+            return Comparator.comparing(Product::getId);
+        }
+
         Comparator<Product> comparator = Comparator.comparing(product -> {
-            if (SortField.description == sortField) {
+            if (sortField.getValue().equals(SortField.DESCRIPTION.getValue())) {
                 return (Comparable) product.getDescription();
             } else {
                 return (Comparable) product.getPrice();
             }
         });
         return comparator;
-    }
-
-    private int countMatchesInQuery(Product product, String query) {
-        if (query != null) {
-            String[] words = query.split(" ");
-            return (int) Arrays.stream(words)
-                    .filter(word -> product.getDescription().toLowerCase().contains(word.toLowerCase()))
-                    .count();
-        } else {
-            return 0;
-        }
-
     }
 
     @Override
