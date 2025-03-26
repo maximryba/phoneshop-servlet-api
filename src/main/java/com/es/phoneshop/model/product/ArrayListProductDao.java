@@ -33,13 +33,13 @@ public class ArrayListProductDao implements ProductDao {
     private final List<Product> products;
 
     @Override
-    public Optional<Product> getProduct(Long id){
+    public Product getProduct(Long id){
         lock.readLock().lock();
         try {
-            return Optional.ofNullable(products.stream()
+            return products.stream()
                     .filter(product -> product.getId().equals(id))
                     .findFirst()
-                    .orElseThrow(() -> new ProductNotFoundException(id)));
+                    .orElseThrow(() -> new ProductNotFoundException(id));
 
         } finally {
             lock.readLock().unlock();
@@ -52,6 +52,8 @@ public class ArrayListProductDao implements ProductDao {
         try {
             if ((query == null || query.isEmpty()) && sortField != null) {
                 return findProductsWithoutQuery(sortField, sortOrder);
+            } else if (query == null || query.isEmpty()) {
+                return findProductsWithoutQueryAndSorting();
             } else if (query != null && !query.isEmpty() && sortField == null) {
                 return findProductsWithQueryWithoutSorting(query);
             } else {
@@ -60,6 +62,12 @@ public class ArrayListProductDao implements ProductDao {
         } finally {
             lock.readLock().unlock();
         }
+    }
+
+    private List<Product> findProductsWithoutQueryAndSorting() {
+        return this.products.stream()
+                .filter(product -> product.getPrice() != null && product.getStock() > 0)
+                .collect(Collectors.toList());
     }
 
     private List<Product> findProductsWithoutQuery(SortField sortField, SortOrder sortOrder) {
@@ -114,7 +122,7 @@ public class ArrayListProductDao implements ProductDao {
         }
 
         Comparator<Product> comparator = Comparator.comparing(product -> {
-            if (sortField.getValue().equals(SortField.DESCRIPTION.getValue())) {
+            if (SortField.DESCRIPTION.getValue().equals(sortField.getValue())) {
                 return (Comparable) product.getDescription();
             } else {
                 return (Comparable) product.getPrice();

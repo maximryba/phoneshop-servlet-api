@@ -61,7 +61,7 @@ public class PriceHistoryPageServletTest {
 
     @Test
     public void testDoGet() throws ServletException, IOException {
-        when(request.getPathInfo()).thenReturn("/1");
+        when(request.getRequestURI()).thenReturn("/phoneshop/products/1");
         servlet.doGet(request, response);
         verify(request).setAttribute(eq("product"), any());
         verify(requestDispatcher).forward(request, response);

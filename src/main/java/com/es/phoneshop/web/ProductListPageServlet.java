@@ -16,6 +16,7 @@ public class ProductListPageServlet extends HttpServlet {
 
     private static final String WEB_INF_PAGES_PRODUCT_LIST_JSP = "/WEB-INF/pages/productList.jsp";
     private static final String PRODUCTS = "products";
+    private static final String QUERY = "query";
     private ProductDao productDao;
 
     @Override
@@ -28,7 +29,7 @@ public class ProductListPageServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String sortField = request.getParameter("sort");
         String sortOrder = request.getParameter("order");
-        request.setAttribute(PRODUCTS, productDao.findProducts(request.getParameter("query"),
+        request.setAttribute(PRODUCTS, productDao.findProducts(request.getParameter(QUERY),
                 Optional.ofNullable(sortField).map(SortField::fromValue).orElse(null),
                 Optional.ofNullable(sortOrder).map(SortOrder::fromValue)
                         .orElse(SortOrder.fromValue(SortOrder.ASC.getValue()))

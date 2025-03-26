@@ -3,7 +3,6 @@ package com.es.phoneshop.web;
 import com.es.phoneshop.model.product.ArrayListProductDao;
 import com.es.phoneshop.model.product.PriceHistory;
 import com.es.phoneshop.model.product.ProductDao;
-import com.es.phoneshop.model.product.ProductNotFoundException;
 import com.es.phoneshop.utils.UriUtil;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
@@ -30,10 +29,8 @@ public class PriceHistoryPageServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         Long productId = UriUtil.getProductId(request.getRequestURI());
-        List<PriceHistory> priceHistories = productDao.getProduct(productId)
-                .orElseThrow(() -> new ProductNotFoundException(productId)).getPriceHistories();
-        request.setAttribute(PRODUCT, productDao.getProduct(productId)
-                .orElseThrow(() -> new ProductNotFoundException(productId)));
+        List<PriceHistory> priceHistories = productDao.getProduct(productId).getPriceHistories();
+        request.setAttribute(PRODUCT, productDao.getProduct(productId));
         request.setAttribute(PRICE_HISTORIES, priceHistories);
         request.getRequestDispatcher(WEB_INF_PAGES_PRICE_HISTORIES_JSP).forward(request, response);
     }

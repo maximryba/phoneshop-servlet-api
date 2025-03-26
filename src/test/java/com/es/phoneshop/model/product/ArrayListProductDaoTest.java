@@ -75,8 +75,7 @@ public class ArrayListProductDaoTest
         Currency usd = Currency.getInstance("USD");
         Product product = new Product("test-product", "Samsung Galaxy S", new BigDecimal(100), usd, 100, "https://raw.githubusercontent.com/andrewosipenko/phoneshop-ext-images/master/manufacturer/Samsung/Samsung%20Galaxy%20S.jpg", new ArrayList<>());
         productDao.save(product);
-        Product foundProduct = productDao.getProduct(product.getId())
-                .orElseThrow(() -> new ProductNotFoundException(product.getId()));
+        Product foundProduct = productDao.getProduct(product.getId());
         assertEquals(foundProduct, product);
         assertEquals("test-product", foundProduct.getCode());
     }
@@ -89,8 +88,7 @@ public class ArrayListProductDaoTest
     @Test
     public void testDeleteProduct() {
         List<Product> products = productDao.findProducts("", SortField.DESCRIPTION, SortOrder.ASC);
-        Product deletedProduct = productDao.getProduct(products.get(0).getId())
-                .orElseThrow(() -> new ProductNotFoundException(products.get(0).getId()));
+        Product deletedProduct = productDao.getProduct(products.get(0).getId());
         productDao.delete(deletedProduct.getId());
         List<Product> productsAfterDelete = productDao.findProducts("", SortField.DESCRIPTION, SortOrder.ASC);
         assertFalse(productsAfterDelete.contains(deletedProduct));
@@ -99,14 +97,12 @@ public class ArrayListProductDaoTest
     @Test
     public void testUpdateProduct() {
         List<Product> products = productDao.findProducts("", null, SortOrder.ASC);
-        Product productForUpdate = productDao.getProduct(products.get(0).getId())
-                .orElseThrow(() -> new ProductNotFoundException(1L));
+        Product productForUpdate = productDao.getProduct(products.get(0).getId());
         productForUpdate.setPrice(BigDecimal.valueOf(200));
         productForUpdate.setDescription("Updated product");
         productDao.save(productForUpdate);
         assertNotNull(productForUpdate.getId());
-        assertEquals("Updated product", productDao.getProduct(productForUpdate.getId())
-                .orElseThrow(() -> new ProductNotFoundException(productForUpdate.getId())).getDescription());
+        assertEquals("Updated product", productDao.getProduct(productForUpdate.getId()).getDescription());
     }
 
     @Test(expected = ProductNotFoundException.class)
