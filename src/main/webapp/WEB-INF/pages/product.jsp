@@ -7,47 +7,77 @@
   <p>
     ${product.description}
   </p>
-   <table>
-        <tr>
-            <td>
-                Image
-            </td>
-            <td>
-                <img src="${product.imageUrl}">
-            </td>
-        </tr>
-         <tr>
-            <td>
-                Code
-            </td>
-            <td>
-                <p>${product.code}</p>
-            </td>
-         </tr>
-         <tr>
+  <p>
+    Cart: ${cart}
+  </p>
+  <c:if test="${not empty param.message}">
+                      <p class="success">
+                          ${param.message}
+                      </p>
+                  </c:if>
+  <c:if test="${not empty error}">
+                      <p class="error">
+                          ${error}
+                      </p>
+                  </c:if>
+   <form method="post">
+       <table>
+            <tr>
+                <td>
+                    Image
+                </td>
+                <td>
+                    <img src="${product.imageUrl}">
+                </td>
+            </tr>
+             <tr>
+                <td>
+                    Code
+                </td>
+                <td>
+                    <p>${product.code}</p>
+                </td>
+             </tr>
+             <tr>
+                  <td>
+                    Price
+                  </td>
+                  <td class="price">
+                    <fmt:formatNumber value="${product.price}" type="currency" currencySymbol="${product.currency.symbol}"/>
+                  </td>
+             </tr>
+             <tr>
+                <td>
+                    Stock
+                </td>
+                <td>
+                    <p>${product.stock}</p>
+                </td>
+             </tr>
+             <tr>
               <td>
-                Price
+                    Description
               </td>
-              <td>
-                <fmt:formatNumber value="${product.price}" type="currency" currencySymbol="${product.currency.symbol}"/>
+              <td class="description">
+                <a href="${pageContext.servletContext.contextPath}/products/${product.id}">
+                              ${product.description} </a>
               </td>
-         </tr>
-         <tr>
-            <td>
-                Stock
+            </tr>
+            <tr>
+            <td class="quantity">
+               Quantity
             </td>
             <td>
-                <p>${product.stock}</p>
+                <input name="quantity" value="${not empty error ? param.quantity : 1}"/>
+                <c:if test="${not empty error}">
+                    <p class="error">
+                        ${error}
+                    </p>
+                </c:if>
             </td>
-         </tr>
-          <td>
-          <a href="${pageContext.servletContext.contextPath}/products/${product.id}">
-          ${product.description} </a>
-          </td>
-          <td class="price">
-            <fmt:formatNumber value="${product.price}" type="currency" currencySymbol="${product.currency.symbol}"/>
-          </td>
-        </tr>
-    </table>
+            </tr>
+        </table>
+        <button>Add to cart</button>
+    </form>
 
 </tags:master>

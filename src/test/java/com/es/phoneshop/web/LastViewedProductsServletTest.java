@@ -22,8 +22,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
-import java.util.Locale;
-
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -32,7 +30,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ProductDetailsPageServletTest {
+public class LastViewedProductsServletTest {
+
     @Mock
     private HttpServletRequest request;
     @Mock
@@ -41,13 +40,12 @@ public class ProductDetailsPageServletTest {
     private RequestDispatcher requestDispatcher;
     @Mock
     private ServletConfig servletConfig;
-
     @Mock
     private HttpSession session;
 
     private ProductDao productDao;
 
-    private final ProductDetailsPageServlet productDetailsPageServlet = new ProductDetailsPageServlet();
+    private final LastViewedProductsServlet lastViewedProductsServlet = new LastViewedProductsServlet();
 
     @Before
     public void setup() throws ServletException {
@@ -61,55 +59,29 @@ public class ProductDetailsPageServletTest {
         productDao.save(new Product( "test-phone", "Test", BigDecimal.valueOf(100), usd, 100, "test", priceHistories));
         productDao.save(new Product( "test-phone", "Test", BigDecimal.valueOf(100), usd, 100, "test", priceHistories));
         productDao.save(new Product( "test-phone", "Test", BigDecimal.valueOf(100), usd, 100, "test", priceHistories));
-        productDetailsPageServlet.init(servletConfig);
+        lastViewedProductsServlet.init(servletConfig);
         when(request.getRequestDispatcher(anyString())).thenReturn(requestDispatcher);
         when(request.getSession()).thenReturn(session);
     }
 
     @Test
     public void testDoGet() throws ServletException, IOException {
-        when(request.getRequestURI()).thenReturn("/phoneshop/products/1");
-        productDetailsPageServlet.doGet(request, response);
-        verify(request).setAttribute(eq("product"), any());
+        lastViewedProductsServlet.doGet(request, response);
+        verify(request).setAttribute(eq(LastViewedProductsServlet.PRODUCTS), any());
         verify(requestDispatcher).forward(request, response);
     }
 
     @Test
-    public void testDoPostIfValidQuantity() throws Exception {
-        Locale locale = Locale.getDefault();
-        when(request.getLocale()).thenReturn(locale);
-        when(request.getParameter(ProductDetailsPageServlet.QUANTITY)).thenReturn("2");
-        when(request.getRequestURI()).thenReturn("/phoneshop/products/1");
-        when(request.getContextPath()).thenReturn("/phoneshop");
-
-        productDetailsPageServlet.doPost(request, response);
-
-        verify(response).sendRedirect( "/phoneshop/products/1?message=Product added to cart");
-
-    }
-
-    @Test
-    public void testDoPostIfInvalidQuantity() throws Exception {
-        when(request.getParameter(ProductDetailsPageServlet.QUANTITY)).thenReturn("invalid");
-        when(request.getLocale()).thenReturn(Locale.getDefault());
-        when(request.getRequestURI()).thenReturn("/phoneshop/products/1");
-        when(session.getAttribute(ProductDetailsPageServlet.PRODUCTS)).thenReturn(new ArrayList<Long>());
-
-        productDetailsPageServlet.doPost(request, response);
-
-        verify(request).setAttribute("error", "Not a number");
+    public void testDoGetIfProductsAreNotNull() throws ServletException, IOException {
+        when(request.getSession()).thenReturn(session);
+        List<Long> ids = List.of(0L, 1L, 2L);
+        when(session.getAttribute(LastViewedProductsServlet.PRODUCTS)).thenReturn(ids);
+        List<Product> products = new ArrayList<>();
+        products.add(productDao.getProduct(ids.get(0)));
+        products.add(productDao.getProduct(ids.get(1)));
+        products.add(productDao.getProduct(ids.get(2)));
+        lastViewedProductsServlet.doGet(request, response);
+        verify(request).setAttribute(LastViewedProductsServlet.PRODUCTS, products);
         verify(requestDispatcher).forward(request, response);
-    }
-
-    @Test
-    public void testDoPostIfOutOfStock() throws Exception {
-        when(request.getLocale()).thenReturn(Locale.getDefault());
-        when(request.getParameter(ProductDetailsPageServlet.QUANTITY)).thenReturn("102");
-        when(request.getRequestURI()).thenReturn("/phoneshop/products/2");
-        when(session.getAttribute(ProductDetailsPageServlet.PRODUCTS)).thenReturn(new ArrayList<Long>());
-
-        productDetailsPageServlet.doPost(request, response);
-
-        verify(request).setAttribute("error", "Out of stock, available 100, requested 102");
     }
 }

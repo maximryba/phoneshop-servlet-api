@@ -17,6 +17,9 @@
   <main>
     <jsp:doBody/>
   </main>
+  <a href="${pageContext.servletContext.contextPath}/products/last-viewed">
+    Last three viewed products
+    </a> <br>
   (c) Expert-Soft
 </body>
 </html>
