@@ -4,20 +4,19 @@ import com.es.phoneshop.model.product.ArrayListProductDao;
 import com.es.phoneshop.model.product.Product;
 import com.es.phoneshop.model.product.ProductDao;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class DefaultCartService implements CartService {
 
-    private Cart cart;
-
     private static final String CART_SESSION_ATTRIBUTE = DefaultCartService.class.getName() + ".cart";
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     private ProductDao productDao;
 
-    private static CartService instance;
+    private static volatile CartService instance;
 
     public static CartService getInstance() {
         if (instance == null) {
@@ -38,9 +37,11 @@ public class DefaultCartService implements CartService {
     public Cart getCart(HttpServletRequest request) {
         lock.readLock().lock();
         try {
-            cart = (Cart) request.getSession().getAttribute(CART_SESSION_ATTRIBUTE);
+            HttpSession session = request.getSession();
+            Cart cart = (Cart) session.getAttribute(CART_SESSION_ATTRIBUTE);
             if (cart == null) {
-                request.getSession().setAttribute(CART_SESSION_ATTRIBUTE, cart = new Cart());
+                cart = new Cart();
+                session.setAttribute(CART_SESSION_ATTRIBUTE, cart);
             }
             return cart;
         } finally {
@@ -49,7 +50,7 @@ public class DefaultCartService implements CartService {
     }
 
     @Override
-    public void add(Cart cart, Long productId, int quantity) throws OutOfStockException{
+    public void add(Cart cart, Long productId, int quantity){
         lock.writeLock().lock();
         try {
             Product product = productDao.getProduct(productId);
@@ -61,9 +62,9 @@ public class DefaultCartService implements CartService {
                     .findFirst()
                     .orElse(null);
 
-            int index = cartItem == null ? -1 : cart.getItems().indexOf(cartItem);
+            int index = cart.getItems().indexOf(cartItem);
             if (index != -1) {
-                cart.getItems().set(index, new CartItem(product, cartItem.getQuantity() + quantity));
+                cartItem.setQuantity(cartItem.getQuantity() + quantity);
             } else {
                 cart.getItems().add(new CartItem(product, quantity));
             }

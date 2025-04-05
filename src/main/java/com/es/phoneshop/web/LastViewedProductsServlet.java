@@ -26,10 +26,10 @@ public class LastViewedProductsServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        List<Long> productsIds = (List<Long>) request.getSession().getAttribute(PRODUCTS);
+        List<Long> productsIds =  (List<Long>) request.getSession().getAttribute(PRODUCTS);
         List<Product> products = new ArrayList<>();
         if (productsIds != null) {
-            productsIds.stream().forEach(id -> products.add(productDao.getProduct(id)));
+            productsIds.forEach(id -> products.add(productDao.getProduct(id)));
         }
         request.setAttribute(PRODUCTS, products);
         request.getRequestDispatcher(WEB_INF_PAGES_LAST_PRODUCTS_JSP).forward(request, response);
