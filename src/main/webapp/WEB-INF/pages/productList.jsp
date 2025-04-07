@@ -8,10 +8,21 @@
   <p>
     Welcome to Expert-Soft training!
   </p>
+  <c:if test="${not empty param.message}">
+                        <p class="success">
+                            ${param.message}
+                        </p>
+                    </c:if>
+  <c:if test="${not empty errors}">
+                                  <p class="error">
+                                      There was an error adding to cart
+                                  </p>
+                              </c:if>
   <form>
     <input name="query" value="">
     <button>Search</button>
   </form>
+  <form method="post">
   <table>
     <thead>
       <tr>
@@ -21,14 +32,18 @@
         <tags:sortLink sort="description" order="asc"/>
         <tags:sortLink sort="description" order="desc"/>
         </td>
+        <td>
+        Quantity
+        </td>
         <td class="price">
             Price
             <tags:sortLink sort="price" order="asc"/>
             <tags:sortLink sort="price" order="desc"/>
         </td>
+        <td></td>
       </tr>
     </thead>
-    <c:forEach var="product" items="${products}">
+    <c:forEach var="product" items="${products}" varStatus="status">
       <tr>
         <td>
           <img class="product-tile" src="${product.imageUrl}">
@@ -37,12 +52,27 @@
         <a href="${pageContext.servletContext.contextPath}/products/${product.id}">
         ${product.description} </a>
         </td>
+        <td>
+            <input name="quantity_${product.id}"
+             value="${not empty errors[product.id] ? 'Input a number' : 1}" data-product-id="${product.id}"/>
+                            <c:if test="${not empty errors}">
+                                <p class="error">
+                                    ${errors[product.id]}
+                                </p>
+                            </c:if>
+        </td>
         <td class="price">
             <a href="${pageContext.servletContext.contextPath}/products/price-histories/${product.id}">
           <fmt:formatNumber value="${product.price}" type="currency" currencySymbol="${product.currency.symbol}"/>
           </a>
         </td>
+        <td>
+        <button type="submit"
+        formaction="${pageContext.servletContext.contextPath}/products?productId=${product.id}">
+        Add to cart</button>
+        </td>
       </tr>
     </c:forEach>
   </table>
+  </form>
 </tags:master>

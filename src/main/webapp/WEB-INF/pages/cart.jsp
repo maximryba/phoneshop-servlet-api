@@ -8,7 +8,17 @@
   <p>
     Cart page
   </p>
-  <form method="post">
+             <c:if test="${not empty errors}">
+                      <p class="error">
+                          There were errors updating a cart
+                      </p>
+              </c:if>
+              <c:if test="${empty errors}">
+                                    <p class="success">
+                                        ${param.message}
+                                    </p>
+                            </c:if>
+  <form method="post" action="${pageContext.servletContext.contextPath}/cart">
   <table>
     <thead>
       <tr>
@@ -22,9 +32,10 @@
         <td class="price">
             Price
         </td>
+        <td></td>
       </tr>
     </thead>
-    <c:forEach var="item" items="${cart.items}">
+    <c:forEach var="item" items="${cart.items}" varStatus="status">
       <tr>
         <td>
           <img class="product-tile" src="${item.product.imageUrl}">
@@ -35,7 +46,12 @@
         </td>
         <td class="quantity">
             <fmt:formatNumber value="${item.quantity}" var="quantity"/>
-            <input name="quantity" value="${quantity}" class="quantity"/>
+            <input name="quantity" value="${not empty errors[item.product.id] ? paramValues['quantity'][status.index] : quantity}" class="quantity"/>
+            <c:if test="${not empty errors[item.product.id]}">
+                    <p class="error">
+                        ${errors[item.product.id]}
+                    </p>
+            </c:if>
             <input name="productId" type="hidden" value="${item.product.id}"/>
         </td>
         <td class="price">
@@ -43,11 +59,26 @@
           <fmt:formatNumber value="${item.product.price}" type="currency" currencySymbol="${item.product.currency.symbol}"/>
           </a>
         </td>
+        <td>
+            <button
+            formaction="${pageContext.servletContext.contextPath}/cart/deleteCartItem/${item.product.id}"
+             form="deleteCartItem">
+            Delete
+            </button>
+        </td>
       </tr>
     </c:forEach>
+    <tr>
+        <td>Total cost</td>
+        <td>${cart.totalCost}</td>
+        <td>Total quantity<td>
+        <td>${cart.totalQuantity}</td>
+    </tr>
   </table>
   <p>
   <button>Update</button>
   </p>
+  </form>
+  <form id="deleteCartItem" method="post">
   </form>
 </tags:master>

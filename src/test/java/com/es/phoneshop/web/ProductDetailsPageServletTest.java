@@ -1,5 +1,6 @@
 package com.es.phoneshop.web;
 
+import com.es.phoneshop.model.cart.OutOfStockException;
 import com.es.phoneshop.model.product.ArrayListProductDao;
 import com.es.phoneshop.model.product.PriceHistory;
 import com.es.phoneshop.model.product.Product;
@@ -10,6 +11,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -101,15 +103,37 @@ public class ProductDetailsPageServletTest {
         verify(requestDispatcher).forward(request, response);
     }
 
-    @Test
+    @Test(expected = OutOfStockException.class)
     public void testDoPostIfOutOfStock() throws Exception {
         when(request.getLocale()).thenReturn(Locale.getDefault());
         when(request.getParameter(ProductDetailsPageServlet.QUANTITY)).thenReturn("102");
         when(request.getRequestURI()).thenReturn("/phoneshop/products/2");
-        when(session.getAttribute(ProductDetailsPageServlet.PRODUCTS)).thenReturn(new ArrayList<Long>());
 
         productDetailsPageServlet.doPost(request, response);
 
         verify(request).setAttribute("error", "Out of stock, available 100, requested 102");
+    }
+
+    @Test
+    public void testDoGetIfLastProductsAreFull() throws ServletException, IOException {
+        List<PriceHistory> priceHistories = new ArrayList<>();
+        priceHistories.add(new PriceHistory
+                (1L, BigDecimal.valueOf(50), LocalDate.of(2024, 12, 5), Currency.getInstance("USD")));
+        productDao.save(new Product( "test-phone", "Test", BigDecimal.valueOf(100), Currency.getInstance("USD"), 100, "test", priceHistories));
+        when(request.getRequestURI()).thenReturn("/phoneshop/products/3");
+        List<Long> ids = new ArrayList<>();
+        ids.add(0L);
+        ids.add(1L);
+        ids.add(2L);
+        when(session.getAttribute(ProductDetailsPageServlet.PRODUCTS)).thenReturn(ids);
+        productDetailsPageServlet.doGet(request, response);
+        List<Long> newIds = (List<Long>) session.getAttribute(ProductDetailsPageServlet.PRODUCTS);
+        Assert.assertEquals(Long.valueOf(3), newIds.get(0));
+        Assert.assertEquals(Long.valueOf(0), newIds.get(1));
+        Assert.assertEquals(Long.valueOf(1), newIds.get(2));
+
+        Assert.assertEquals(3, newIds.size());
+        verify(request).setAttribute(eq("product"), any());
+        verify(requestDispatcher).forward(request, response);
     }
 }

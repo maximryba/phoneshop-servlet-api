@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 public class ArrayListProductDao implements ProductDao {
 
-    private static ProductDao instance;
+    private static volatile ProductDao instance;
 
     public static ProductDao getInstance() {
         if (instance == null) {
@@ -54,7 +54,7 @@ public class ArrayListProductDao implements ProductDao {
                 return findProductsWithoutQuery(sortField, sortOrder);
             } else if (query == null || query.isEmpty()) {
                 return findProductsWithoutQueryAndSorting();
-            } else if (query != null && !query.isEmpty() && sortField == null) {
+            } else if (sortField == null) {
                 return findProductsWithQueryWithoutSorting(query);
             } else {
                 return findProductsWithQueryAndSorting(query, sortField, sortOrder);

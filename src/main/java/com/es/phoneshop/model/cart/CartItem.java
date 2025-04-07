@@ -5,7 +5,7 @@ import com.es.phoneshop.model.product.Product;
 import java.io.Serializable;
 
 public class CartItem implements Serializable {
-    private Product product;
+    private final Product product;
     private int quantity;
 
     public CartItem(Product product, int quantity) {
@@ -17,12 +17,16 @@ public class CartItem implements Serializable {
         return product;
     }
 
+    public void setQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
     public int getQuantity() {
         return quantity;
     }
 
     @Override
     public String toString() {
-        return product.getCode() + ", " + quantity + ";";
+        return product.getCode().concat(", ").concat(String.valueOf(quantity)).concat(";");
     }
 }

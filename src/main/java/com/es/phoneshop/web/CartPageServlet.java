@@ -3,10 +3,8 @@ package com.es.phoneshop.web;
 import com.es.phoneshop.model.cart.Cart;
 import com.es.phoneshop.model.cart.CartService;
 import com.es.phoneshop.model.cart.DefaultCartService;
-import com.es.phoneshop.model.cart.OutOfStockException;
 import com.es.phoneshop.model.product.ArrayListProductDao;
 import com.es.phoneshop.model.product.ProductDao;
-import com.es.phoneshop.utils.UriUtil;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -16,18 +14,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class CartPageServlet extends HttpServlet {
-    private static final String PRODUCT = "product";
     private static final String WEB_INF_CART_JSP = "/WEB-INF/pages/cart.jsp";
     public static final String QUANTITY = "quantity";
-    public static final String CART = "cart";
-    public static final String PRODUCTS = "lastProducts";
+    public static final String PRODUCT_ID = "productId";
     private ProductDao productDao;
     private CartService cartService;
-    private List<Long> lastViewedProducts;
 
     @Override
     public void init(ServletConfig servletConfig) throws ServletException {
@@ -46,26 +41,30 @@ public class CartPageServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String quantityString = request.getParameter(QUANTITY);
-        int quantity;
-        try {
-            NumberFormat format = NumberFormat.getInstance(request.getLocale());
-            quantity = format.parse(quantityString).intValue();
-        } catch (ParseException e) {
-            request.setAttribute("error", "Not a number");
-            doGet(request, response);
-            return;
+        String[] productIds = request.getParameterValues(PRODUCT_ID);
+        String[] quantities = request.getParameterValues(QUANTITY);
+        Map<Long, String> errors = new HashMap<>();
+        for (int i = 0; i < productIds.length; i++) {
+            Long productId = Long.valueOf(productIds[i]);
+            int quantity;
+            try {
+                NumberFormat format = NumberFormat.getInstance(request.getLocale());
+                quantity = format.parse(quantities[i]).intValue();
+                Cart cart = cartService.getCart(request);
+
+                cartService.update(cart, productId, quantity);
+            } catch (ParseException e) {
+                errors.put(productId, "Not a number");
+            }
+
         }
-        Long productId = UriUtil.getProductId(request.getRequestURI());
-        Cart cart = cartService.getCart(request);
-        try {
-            cartService.add(cart, productId, quantity);
-        } catch (OutOfStockException e) {
-            request.setAttribute("error", "Out of stock, available "
-                    + e.getStockAvailable() + ", requested " + e.getStockRequested());
+        if (errors.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/cart?message=Cart updated successfully");
+        } else {
+            request.setAttribute("errors", errors);
             doGet(request, response);
-            return;
         }
-        response.sendRedirect(request.getContextPath() + "/products/" + productId + "?message=Product added to cart");
+
     }
+
 }

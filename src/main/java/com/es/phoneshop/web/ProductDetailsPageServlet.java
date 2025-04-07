@@ -3,7 +3,6 @@ package com.es.phoneshop.web;
 import com.es.phoneshop.model.cart.Cart;
 import com.es.phoneshop.model.cart.CartService;
 import com.es.phoneshop.model.cart.DefaultCartService;
-import com.es.phoneshop.model.cart.OutOfStockException;
 import com.es.phoneshop.model.product.ArrayListProductDao;
 import com.es.phoneshop.model.product.ProductDao;
 import com.es.phoneshop.utils.UriUtil;
@@ -12,6 +11,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.text.NumberFormat;
@@ -27,7 +27,6 @@ public class ProductDetailsPageServlet extends HttpServlet {
     public static final String PRODUCTS = "lastProducts";
     private ProductDao productDao;
     private CartService cartService;
-    private List<Long> lastViewedProducts;
 
     @Override
     public void init(ServletConfig servletConfig) throws ServletException {
@@ -39,19 +38,27 @@ public class ProductDetailsPageServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         Long productId = UriUtil.getProductId(request.getRequestURI());
-
-        lastViewedProducts = request.getSession().getAttribute(PRODUCTS) != null ?
-                (List<Long>) request.getSession().getAttribute(PRODUCTS) : new ArrayList<>();
-        if (lastViewedProducts.size() > 2) { // Надо сохранять последние 3 продукта
-            lastViewedProducts.set(0, productId);
-        } else {
-            lastViewedProducts.add(productId);
-        }
+        List<Long> lastViewedProducts = getLastViewedProducts(request, productId);
 
         request.getSession().setAttribute(PRODUCTS, lastViewedProducts);
         request.setAttribute(PRODUCT, productDao.getProduct(productId));
         request.setAttribute(CART, cartService.getCart(request));
         request.getRequestDispatcher(WEB_INF_PAGES_PRODUCT_JSP).forward(request, response);
+    }
+
+    private static List<Long> getLastViewedProducts(HttpServletRequest request, Long productId) {
+        HttpSession session = request.getSession();
+        List<Long> lastViewedProducts;
+        if (session.getAttribute(PRODUCTS) != null) {
+            lastViewedProducts = (List<Long>) session.getAttribute(PRODUCTS);
+        } else {
+            lastViewedProducts = new ArrayList<>();
+        }
+        lastViewedProducts.add(0, productId);
+        if (lastViewedProducts.size() > 2) {
+            lastViewedProducts.subList(3, lastViewedProducts.size()).clear();
+        }
+        return lastViewedProducts;
     }
 
     @Override
@@ -69,14 +76,14 @@ public class ProductDetailsPageServlet extends HttpServlet {
         }
         Long productId = UriUtil.getProductId(request.getRequestURI());
         Cart cart = cartService.getCart(request);
-        try {
-            cartService.add(cart, productId, quantity);
-        } catch (OutOfStockException e) {
-            request.setAttribute("error", "Out of stock, available "
-                    + e.getStockAvailable() + ", requested " + e.getStockRequested());
-            doGet(request, response);
-            return;
-        }
+//        try {
+//            cartService.add(cart, productId, quantity);
+//        } catch (OutOfStockException e) {
+//            request.setAttribute("error", e.getMessage());
+//            doGet(request, response);
+//            return;
+//        }
+        cartService.add(cart, productId, quantity);
         response.sendRedirect(request.getContextPath() + "/products/" + productId + "?message=Product added to cart");
     }
 }
