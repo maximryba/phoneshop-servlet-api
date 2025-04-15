@@ -13,9 +13,9 @@
                           There were errors updating a cart
                       </p>
               </c:if>
-              <c:if test="${empty errors}">
+              <c:if test="${not empty success}">
                                     <p class="success">
-                                        ${param.message}
+                                        Cart updated successfully
                                     </p>
                             </c:if>
   <form method="post" action="${pageContext.servletContext.contextPath}/cart">
@@ -78,6 +78,9 @@
   <p>
   <button>Update</button>
   </p>
+  </form>
+  <form action="${pageContext.servletContext.contextPath}/checkout">
+      <button>Checkout</button>
   </form>
   <form id="deleteCartItem" method="post">
   </form>

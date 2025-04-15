@@ -68,9 +68,10 @@ public class ProductListPageServlet extends HttpServlet {
             errors.put(productId, "Not a number");
         }
         if (errors.isEmpty()) {
-            String productDescription = productDao.getProduct(productId).getDescription();
-            response.sendRedirect(request.getContextPath() +
-                    "/products" + "?message=Product " + productDescription + " added to cart");
+            String productDescription = productDao.get(productId).getDescription();
+            request.setAttribute("success", true);
+            request.setAttribute("description", productDescription);
+            doGet(request, response);
         } else {
             request.setAttribute("errors", errors);
             doGet(request, response);

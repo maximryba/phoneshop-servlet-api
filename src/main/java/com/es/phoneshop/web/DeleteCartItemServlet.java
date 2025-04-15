@@ -13,7 +13,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 public class DeleteCartItemServlet extends HttpServlet {
+    private static final String SUCCESS_DELETE = "successDelete";
+    private static final String CART = "cart";
     private CartService cartService;
+    private static final String WEB_INF_CART_JSP = "/WEB-INF/pages/cart.jsp";
 
     @Override
     public void init(ServletConfig servletConfig) throws ServletException {
@@ -23,10 +26,12 @@ public class DeleteCartItemServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        Long productId = UriUtil.getProductId(request.getRequestURI());
+            throws IOException, ServletException {
+        Long productId = UriUtil.getEntityId(request.getRequestURI());
         Cart cart = cartService.getCart(request);
         cartService.delete(cart, productId);
-        response.sendRedirect(request.getContextPath() + "/cart?message=Cart item removed successfully");
+        request.setAttribute(SUCCESS_DELETE, true);
+        request.setAttribute(CART, cartService.getCart(request));
+        request.getRequestDispatcher(WEB_INF_CART_JSP).forward(request, response);
     }
 }

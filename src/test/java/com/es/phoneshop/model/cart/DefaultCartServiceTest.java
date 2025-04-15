@@ -103,11 +103,11 @@ public class DefaultCartServiceTest {
         cartService.add(cart, 0L, 1);
         cartService.add(cart, 1L, 1);
         assertEquals(Long.valueOf(1), cart.getItems().get(1).getProduct().getId());
-        assertEquals(19, productDao.getProduct(0L).getStock());
+        assertEquals(19, productDao.get(0L).getStock());
 
         cartService.delete(cart, 0L);
 
-        assertEquals(20, productDao.getProduct(0L).getStock());
+        assertEquals(20, productDao.get(0L).getStock());
         assertEquals(Long.valueOf(1), cart.getItems().get(0).getProduct().getId());
     }
     @Test(expected = ProductNotFoundException.class)
@@ -131,11 +131,11 @@ public class DefaultCartServiceTest {
         productDao.save(product);
         Cart cart = new Cart();
         cartService.add(cart, 0L, 50);
-        assertEquals(50, productDao.getProduct(0L).getStock());
+        assertEquals(50, productDao.get(0L).getStock());
 
         cartService.add(cart, 0L, 30);
 
-        assertEquals(20, productDao.getProduct(0L).getStock());
+        assertEquals(20, productDao.get(0L).getStock());
     }
 
     @Test

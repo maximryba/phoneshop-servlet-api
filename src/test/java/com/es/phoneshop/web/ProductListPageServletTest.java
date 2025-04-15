@@ -80,11 +80,11 @@ public class ProductListPageServletTest {
         when(request.getLocale()).thenReturn(locale);
         when(request.getParameter("quantity_2")).thenReturn("2");
         when(request.getParameter("productId")).thenReturn("2");
-        when(request.getContextPath()).thenReturn("/phoneshop");
 
         servlet.doPost(request, response);
 
-        verify(response).sendRedirect( "/phoneshop/products?message=Product Test added to cart");
+        verify(request).setAttribute("success", true);
+        verify(request).setAttribute("description", "Test");
     }
 
     @Test

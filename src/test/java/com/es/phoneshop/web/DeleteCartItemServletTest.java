@@ -7,6 +7,7 @@ import com.es.phoneshop.model.product.ArrayListProductDao;
 import com.es.phoneshop.model.product.PriceHistory;
 import com.es.phoneshop.model.product.Product;
 import com.es.phoneshop.model.product.ProductDao;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -34,6 +36,8 @@ public class DeleteCartItemServletTest {
     private HttpServletRequest request;
     @Mock
     private HttpServletResponse response;
+    @Mock
+    private RequestDispatcher requestDispatcher;
 
     @Mock
     private ServletConfig servletConfig;
@@ -59,19 +63,20 @@ public class DeleteCartItemServletTest {
         productDao.save(new Product( "test-phone", "Test", BigDecimal.valueOf(100), usd, 100, "test", priceHistories));
         productDao.save(new Product( "test-phone", "Test", BigDecimal.valueOf(100), usd, 100, "test", priceHistories));
         productDao.save(new Product( "test-phone", "Test", BigDecimal.valueOf(100), usd, 100, "test", priceHistories));
+        when(request.getRequestDispatcher(anyString())).thenReturn(requestDispatcher);
         when(request.getSession()).thenReturn(session);
     }
 
     @Test
-    public void testDoPost() throws IOException {
+    public void testDoPost() throws IOException, ServletException {
         when(request.getRequestURI()).thenReturn("/phoneshop/cart/deleteCartItem/0");
-        when(request.getContextPath()).thenReturn("/phoneshop");
         Cart cart = new Cart();
-        cart.getItems().add(new CartItem(productDao.getProduct(0L), 3));
+        cart.getItems().add(new CartItem(productDao.get(0L), 3));
 
         when(session.getAttribute(DefaultCartService.class.getName() + ".cart")).thenReturn(cart);
         servlet.doPost(request, response);
 
-        verify(response).sendRedirect("/phoneshop/cart?message=Cart item removed successfully");
+        verify(request).setAttribute("successDelete", true);
+        verify(requestDispatcher).forward(request, response);
     }
 }

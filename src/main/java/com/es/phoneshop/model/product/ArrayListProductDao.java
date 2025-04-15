@@ -1,15 +1,13 @@
 package com.es.phoneshop.model.product;
 
-import java.util.ArrayList;
+import com.es.phoneshop.model.general.AbstractDao;
+
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
-public class ArrayListProductDao implements ProductDao {
+public class ArrayListProductDao extends AbstractDao<Product> implements ProductDao {
 
     private static volatile ProductDao instance;
 
@@ -25,25 +23,7 @@ public class ArrayListProductDao implements ProductDao {
     }
 
     private ArrayListProductDao() {
-        products = new ArrayList<>();
-    }
-
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private long maxId;
-    private final List<Product> products;
-
-    @Override
-    public Product getProduct(Long id){
-        lock.readLock().lock();
-        try {
-            return products.stream()
-                    .filter(product -> product.getId().equals(id))
-                    .findFirst()
-                    .orElseThrow(() -> new ProductNotFoundException(id));
-
-        } finally {
-            lock.readLock().unlock();
-        }
+        super();
     }
 
     @Override
@@ -65,7 +45,7 @@ public class ArrayListProductDao implements ProductDao {
     }
 
     private List<Product> findProductsWithoutQueryAndSorting() {
-        return this.products.stream()
+        return this.items.stream()
                 .filter(product -> product.getPrice() != null && product.getStock() > 0)
                 .collect(Collectors.toList());
     }
@@ -73,14 +53,14 @@ public class ArrayListProductDao implements ProductDao {
     private List<Product> findProductsWithoutQuery(SortField sortField, SortOrder sortOrder) {
         Comparator<Product> comparator = getProductComparator(sortField);
         boolean asc = sortOrder.getValue().equals("asc");
-        return this.products.stream()
+        return this.items.stream()
                 .filter(product -> product.getPrice() != null && product.getStock() > 0)
                 .sorted(asc ? comparator : comparator.reversed())
                 .collect(Collectors.toList());
     }
 
     private List<Product> findProductsWithQueryWithoutSorting(String query) {
-        return this.products.stream()
+        return this.items.stream()
                 .filter(product -> product.getPrice() != null && product.getStock() > 0)
                 .filter(product -> matchDescription(product, query, true) == 1)
                 .sorted((a, b) -> Integer.compare(matchDescription(b, query, false),
@@ -91,7 +71,7 @@ public class ArrayListProductDao implements ProductDao {
     private List<Product> findProductsWithQueryAndSorting(String query, SortField sortField, SortOrder sortOrder) {
         Comparator<Product> comparator = getProductComparator(sortField);
         boolean asc = sortOrder.getValue().equals("asc");
-        return this.products.stream()
+        return this.items.stream()
                 .filter(product -> product.getPrice() != null && product.getStock() > 0)
                 .filter(product -> matchDescription(product, query, true) == 1)
                 .sorted(asc ? comparator : comparator.reversed())
@@ -132,37 +112,12 @@ public class ArrayListProductDao implements ProductDao {
     }
 
     @Override
-    public void save(Product product) {
-        lock.writeLock().lock();
-        try {
-            Optional.ofNullable(product.getId())
-                    .map(id -> products.stream()
-                            .filter(pr -> id.equals(pr.getId()))
-                            .findFirst()
-                            .map(existingProduct -> {
-                                int index = products.indexOf(existingProduct);
-                                products.set(index, product);
-                                return existingProduct;
-                            })
-                            .orElseThrow(() -> new ProductNotFoundException(id)))
-                    .orElseGet(() -> {
-                        product.setId(maxId++);
-                        products.add(product);
-                        return product;
-                    });
-        } finally {
-            lock.writeLock().unlock();
-        }
-
+    protected Long getId(Product item) {
+        return item.getId();
     }
 
     @Override
-    public void delete(Long id) {
-        lock.writeLock().lock();
-        try {
-            products.removeIf(product -> product.getId().equals(id));
-        } finally {
-            lock.writeLock().unlock();
-        }
+    protected void setId(Product item, long id) {
+        item.setId(id);
     }
 }

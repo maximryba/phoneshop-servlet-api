@@ -57,7 +57,7 @@ public class DefaultCartService implements CartService {
     public void add(Cart cart, Long productId, int quantity){
         lock.writeLock().lock();
         try {
-            Product product = productDao.getProduct(productId);
+            Product product = productDao.get(productId);
             CartItem cartItem = findCartItem(cart, product, quantity);
             int index = cart.getItems().indexOf(cartItem);
             if (index != -1) {
@@ -83,7 +83,7 @@ public class DefaultCartService implements CartService {
     public void update(Cart cart, Long productId, int quantity){
         lock.writeLock().lock();
         try {
-            Product product = productDao.getProduct(productId);
+            Product product = productDao.get(productId);
 
             CartItem cartItem = findCartItem(cart, product, quantity);
             if (cartItem != null) {
@@ -120,16 +120,26 @@ public class DefaultCartService implements CartService {
     public void delete(Cart cart, Long productId) {
         lock.writeLock().lock();
         try {
-            Product product = productDao.getProduct(productId);
+            Product product = productDao.get(productId);
             CartItem cartItem = cart.getItems().stream()
                             .filter(item -> item.getProduct().getId().equals(productId))
-                                    .findFirst()
-                                            .orElseThrow(() -> new ProductNotFoundException(productId));
+                            .findFirst()
+                            .orElseThrow(() -> new ProductNotFoundException(productId));
             product.setStock(product.getStock() + cartItem.getQuantity());
             cart.getItems().removeIf(item ->
                     productId.equals(item.getProduct().getId()));
             recalculateCart(cart);
 
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void deleteCart(HttpSession session) {
+        lock.writeLock().lock();
+        try {
+            session.removeAttribute(CART_SESSION_ATTRIBUTE);
         } finally {
             lock.writeLock().unlock();
         }

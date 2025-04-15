@@ -29,7 +29,7 @@ public class LastViewedProductsServlet extends HttpServlet {
         List<Long> productsIds = (List<Long>) request.getSession().getAttribute(PRODUCTS);
         List<Product> products = new ArrayList<>();
         if (productsIds != null) {
-            productsIds.forEach(id -> products.add(productDao.getProduct(id)));
+            productsIds.forEach(id -> products.add(productDao.get(id)));
         }
         request.setAttribute(PRODUCTS, products);
         request.getRequestDispatcher(WEB_INF_PAGES_LAST_PRODUCTS_JSP).forward(request, response);

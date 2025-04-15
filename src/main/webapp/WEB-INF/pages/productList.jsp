@@ -8,9 +8,9 @@
   <p>
     Welcome to Expert-Soft training!
   </p>
-  <c:if test="${not empty param.message}">
+  <c:if test="${not empty success}">
                         <p class="success">
-                            ${param.message}
+                            Product ${description} added to cart
                         </p>
                     </c:if>
   <c:if test="${not empty errors}">

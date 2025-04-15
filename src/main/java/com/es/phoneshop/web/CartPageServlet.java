@@ -3,8 +3,6 @@ package com.es.phoneshop.web;
 import com.es.phoneshop.model.cart.Cart;
 import com.es.phoneshop.model.cart.CartService;
 import com.es.phoneshop.model.cart.DefaultCartService;
-import com.es.phoneshop.model.product.ArrayListProductDao;
-import com.es.phoneshop.model.product.ProductDao;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -19,15 +17,14 @@ import java.util.Map;
 
 public class CartPageServlet extends HttpServlet {
     private static final String WEB_INF_CART_JSP = "/WEB-INF/pages/cart.jsp";
-    public static final String QUANTITY = "quantity";
-    public static final String PRODUCT_ID = "productId";
-    private ProductDao productDao;
+    private static final String QUANTITY = "quantity";
+    private static final String PRODUCT_ID = "productId";
+
     private CartService cartService;
 
     @Override
     public void init(ServletConfig servletConfig) throws ServletException {
         super.init(servletConfig);
-        productDao = ArrayListProductDao.getInstance();
         cartService = DefaultCartService.getInstance();
     }
 
@@ -56,15 +53,14 @@ public class CartPageServlet extends HttpServlet {
             } catch (ParseException e) {
                 errors.put(productId, "Not a number");
             }
-
         }
         if (errors.isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/cart?message=Cart updated successfully");
+            request.setAttribute("success", true);
+            request.setAttribute("cart", cartService.getCart(request));
+            request.getRequestDispatcher(WEB_INF_CART_JSP).forward(request, response);
         } else {
             request.setAttribute("errors", errors);
             doGet(request, response);
         }
-
     }
-
 }

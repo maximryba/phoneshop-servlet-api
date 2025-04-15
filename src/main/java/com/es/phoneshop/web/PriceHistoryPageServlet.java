@@ -28,9 +28,9 @@ public class PriceHistoryPageServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        Long productId = UriUtil.getProductId(request.getRequestURI());
-        List<PriceHistory> priceHistories = productDao.getProduct(productId).getPriceHistories();
-        request.setAttribute(PRODUCT, productDao.getProduct(productId));
+        Long productId = UriUtil.getEntityId(request.getRequestURI());
+        List<PriceHistory> priceHistories = productDao.get(productId).getPriceHistories();
+        request.setAttribute(PRODUCT, productDao.get(productId));
         request.setAttribute(PRICE_HISTORIES, priceHistories);
         request.getRequestDispatcher(WEB_INF_PAGES_PRICE_HISTORIES_JSP).forward(request, response);
     }

@@ -28,6 +28,10 @@ public class Cart implements Serializable {
         this.totalCost = totalCost;
     }
 
+    public void setItems(List<CartItem> items) {
+        this.items = items;
+    }
+
     public Cart() {
         this.items = new ArrayList<>();
     }

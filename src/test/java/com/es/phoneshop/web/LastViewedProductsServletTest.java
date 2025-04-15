@@ -77,9 +77,9 @@ public class LastViewedProductsServletTest {
         List<Long> ids = List.of(0L, 1L, 2L);
         when(session.getAttribute(LastViewedProductsServlet.PRODUCTS)).thenReturn(ids);
         List<Product> products = new ArrayList<>();
-        products.add(productDao.getProduct(ids.get(0)));
-        products.add(productDao.getProduct(ids.get(1)));
-        products.add(productDao.getProduct(ids.get(2)));
+        products.add(productDao.get(ids.get(0)));
+        products.add(productDao.get(ids.get(1)));
+        products.add(productDao.get(ids.get(2)));
         lastViewedProductsServlet.doGet(request, response);
         verify(request).setAttribute(LastViewedProductsServlet.PRODUCTS, products);
         verify(requestDispatcher).forward(request, response);

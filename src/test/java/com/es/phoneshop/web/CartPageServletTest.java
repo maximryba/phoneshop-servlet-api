@@ -81,13 +81,13 @@ public class CartPageServletTest {
     public void testDoPostIfNoErrors() throws ServletException, IOException {
         Locale locale = Locale.getDefault();
         when(request.getLocale()).thenReturn(locale);
-        when(request.getContextPath()).thenReturn("/phoneshop");
-        when(request.getParameterValues(CartPageServlet.PRODUCT_ID)).thenReturn(new String[]{"1", "2"});
-        when(request.getParameterValues(CartPageServlet.QUANTITY)).thenReturn(new String[]{"10", "20"});
+        when(request.getParameterValues("productId")).thenReturn(new String[]{"1", "2"});
+        when(request.getParameterValues("quantity")).thenReturn(new String[]{"10", "20"});
 
         servlet.doPost(request, response);
 
-        verify(response).sendRedirect("/phoneshop/cart?message=Cart updated successfully");
+        verify(request).setAttribute("success", true);
+        verify(requestDispatcher).forward(request, response);
     }
 
     @Test
@@ -96,8 +96,8 @@ public class CartPageServletTest {
         when(request.getLocale()).thenReturn(locale);
         Map<Long, String> errors = new HashMap<>();
         errors.put(1L, "Not a number");
-        when(request.getParameterValues(CartPageServlet.PRODUCT_ID)).thenReturn(new String[]{"1", "2"});
-        when(request.getParameterValues(CartPageServlet.QUANTITY)).thenReturn(new String[]{"eee", "20"});
+        when(request.getParameterValues("productId")).thenReturn(new String[]{"1", "2"});
+        when(request.getParameterValues("quantity")).thenReturn(new String[]{"eee", "20"});
 
         servlet.doPost(request, response);
 

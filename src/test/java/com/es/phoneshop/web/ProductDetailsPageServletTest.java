@@ -82,11 +82,10 @@ public class ProductDetailsPageServletTest {
         when(request.getLocale()).thenReturn(locale);
         when(request.getParameter(ProductDetailsPageServlet.QUANTITY)).thenReturn("2");
         when(request.getRequestURI()).thenReturn("/phoneshop/products/1");
-        when(request.getContextPath()).thenReturn("/phoneshop");
 
         productDetailsPageServlet.doPost(request, response);
 
-        verify(response).sendRedirect( "/phoneshop/products/1?message=Product added to cart");
+        verify(request).setAttribute("success", true);
 
     }
 

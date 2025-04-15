@@ -37,11 +37,11 @@ public class ProductDetailsPageServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        Long productId = UriUtil.getProductId(request.getRequestURI());
+        Long productId = UriUtil.getEntityId(request.getRequestURI());
         List<Long> lastViewedProducts = getLastViewedProducts(request, productId);
 
         request.getSession().setAttribute(PRODUCTS, lastViewedProducts);
-        request.setAttribute(PRODUCT, productDao.getProduct(productId));
+        request.setAttribute(PRODUCT, productDao.get(productId));
         request.setAttribute(CART, cartService.getCart(request));
         request.getRequestDispatcher(WEB_INF_PAGES_PRODUCT_JSP).forward(request, response);
     }
@@ -74,16 +74,10 @@ public class ProductDetailsPageServlet extends HttpServlet {
             doGet(request, response);
             return;
         }
-        Long productId = UriUtil.getProductId(request.getRequestURI());
+        Long productId = UriUtil.getEntityId(request.getRequestURI());
         Cart cart = cartService.getCart(request);
-//        try {
-//            cartService.add(cart, productId, quantity);
-//        } catch (OutOfStockException e) {
-//            request.setAttribute("error", e.getMessage());
-//            doGet(request, response);
-//            return;
-//        }
         cartService.add(cart, productId, quantity);
-        response.sendRedirect(request.getContextPath() + "/products/" + productId + "?message=Product added to cart");
+        request.setAttribute("success", true);
+        doGet(request, response);
     }
 }
