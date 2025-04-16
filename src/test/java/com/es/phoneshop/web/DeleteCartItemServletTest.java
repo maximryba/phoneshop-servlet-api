@@ -1,10 +1,17 @@
 package com.es.phoneshop.web;
 
+import com.es.phoneshop.model.cart.Cart;
+import com.es.phoneshop.model.cart.CartItem;
+import com.es.phoneshop.model.cart.DefaultCartService;
 import com.es.phoneshop.model.product.ArrayListProductDao;
 import com.es.phoneshop.model.product.PriceHistory;
 import com.es.phoneshop.model.product.Product;
 import com.es.phoneshop.model.product.ProductDao;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,43 +19,36 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import jakarta.servlet.RequestDispatcher;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Currency;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ProductListPageServletTest {
+public class DeleteCartItemServletTest {
     @Mock
     private HttpServletRequest request;
     @Mock
     private HttpServletResponse response;
     @Mock
     private RequestDispatcher requestDispatcher;
+
     @Mock
     private ServletConfig servletConfig;
 
     private ProductDao productDao;
 
+
     @Mock
     private HttpSession session;
 
-    private final ProductListPageServlet servlet = new ProductListPageServlet();
+    private final DeleteCartItemServlet servlet = new DeleteCartItemServlet();
 
     @Before
     public void setup() throws ServletException {
@@ -68,38 +68,15 @@ public class ProductListPageServletTest {
     }
 
     @Test
-    public void testDoGet() throws ServletException, IOException {
-        servlet.doGet(request, response);
-        verify(request).setAttribute(eq("products"), any());
-        verify(requestDispatcher).forward(request, response);
-    }
+    public void testDoPost() throws IOException, ServletException {
+        when(request.getRequestURI()).thenReturn("/phoneshop/cart/deleteCartItem/0");
+        Cart cart = new Cart();
+        cart.getItems().add(new CartItem(productDao.get(0L), 3));
 
-    @Test
-    public void testDoPostIfNoErrors() throws ServletException, IOException {
-        Locale locale = Locale.getDefault();
-        when(request.getLocale()).thenReturn(locale);
-        when(request.getParameter("quantity_2")).thenReturn("2");
-        when(request.getParameter("productId")).thenReturn("2");
-
+        when(session.getAttribute(DefaultCartService.class.getName() + ".cart")).thenReturn(cart);
         servlet.doPost(request, response);
 
-        verify(request).setAttribute("success", true);
-        verify(request).setAttribute("description", "Test");
-    }
-
-    @Test
-    public void testDoPostIfErrors() throws ServletException, IOException {
-        Locale locale = Locale.getDefault();
-        when(request.getLocale()).thenReturn(locale);
-        Map<Long, String> errors = new HashMap<>();
-        errors.put(2L, "Not a number");
-        when(request.getParameter("quantity_2")).thenReturn("eee");
-        when(request.getParameter("productId")).thenReturn("2");
-
-
-        servlet.doPost(request, response);
-
-        verify(request).setAttribute("errors", errors);
+        verify(request).setAttribute("successDelete", true);
         verify(requestDispatcher).forward(request, response);
     }
 }

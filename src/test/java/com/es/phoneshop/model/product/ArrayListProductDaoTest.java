@@ -1,5 +1,6 @@
 package com.es.phoneshop.model.product;
 
+import com.es.phoneshop.model.general.EntityNotFoundException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,8 +44,8 @@ public class ArrayListProductDaoTest
     @Test
     public void testFindProductsWithoutQueryWithoutSortingHaveResults() {
         List<Product> products = productDao.findProducts("", null, SortOrder.ASC);
-        assertEquals("Test 1", products.get(0).getDescription());
-        assertEquals(2, products.size());
+        assertEquals("Description", products.get(0).getDescription());
+        assertEquals(11, products.size());
     }
 
     @Test
@@ -75,20 +76,20 @@ public class ArrayListProductDaoTest
         Currency usd = Currency.getInstance("USD");
         Product product = new Product("test-product", "Samsung Galaxy S", new BigDecimal(100), usd, 100, "https://raw.githubusercontent.com/andrewosipenko/phoneshop-ext-images/master/manufacturer/Samsung/Samsung%20Galaxy%20S.jpg", new ArrayList<>());
         productDao.save(product);
-        Product foundProduct = productDao.getProduct(product.getId());
+        Product foundProduct = productDao.get(product.getId());
         assertEquals(foundProduct, product);
         assertEquals("test-product", foundProduct.getCode());
     }
 
-    @Test(expected = ProductNotFoundException.class)
+    @Test(expected = EntityNotFoundException.class)
     public void testGetProductByIdFailed() {
-        productDao.getProduct(100L);
+        productDao.get(100L);
     }
 
     @Test
     public void testDeleteProduct() {
         List<Product> products = productDao.findProducts("", SortField.DESCRIPTION, SortOrder.ASC);
-        Product deletedProduct = productDao.getProduct(products.get(0).getId());
+        Product deletedProduct = productDao.get(products.get(0).getId());
         productDao.delete(deletedProduct.getId());
         List<Product> productsAfterDelete = productDao.findProducts("", SortField.DESCRIPTION, SortOrder.ASC);
         assertFalse(productsAfterDelete.contains(deletedProduct));
@@ -97,15 +98,15 @@ public class ArrayListProductDaoTest
     @Test
     public void testUpdateProduct() {
         List<Product> products = productDao.findProducts("", null, SortOrder.ASC);
-        Product productForUpdate = productDao.getProduct(products.get(0).getId());
+        Product productForUpdate = productDao.get(products.get(0).getId());
         productForUpdate.setPrice(BigDecimal.valueOf(200));
         productForUpdate.setDescription("Updated product");
         productDao.save(productForUpdate);
         assertNotNull(productForUpdate.getId());
-        assertEquals("Updated product", productDao.getProduct(productForUpdate.getId()).getDescription());
+        assertEquals("Updated product", productDao.get(productForUpdate.getId()).getDescription());
     }
 
-    @Test(expected = ProductNotFoundException.class)
+    @Test(expected = EntityNotFoundException.class)
     public void testProductUpdateFailed() {
         Currency usd = Currency.getInstance("USD");
         Product product = new Product(50L,"test-product", "Samsung Galaxy S", new BigDecimal(100), usd, 100, "https://raw.githubusercontent.com/andrewosipenko/phoneshop-ext-images/master/manufacturer/Samsung/Samsung%20Galaxy%20S.jpg", new ArrayList<>());

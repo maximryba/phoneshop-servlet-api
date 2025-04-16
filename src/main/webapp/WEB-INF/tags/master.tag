@@ -13,10 +13,16 @@
       <img src="${pageContext.servletContext.contextPath}/images/logo.svg"/>
       PhoneShop
     </a>
+    <a href="${pageContext.servletContext.contextPath}/cart">
+    <jsp:include page="/cart/minicart"/>
+    </a>
   </header>
   <main>
     <jsp:doBody/>
   </main>
+  <a href="${pageContext.servletContext.contextPath}/products/last-viewed">
+    Last three viewed products
+    </a> <br>
   (c) Expert-Soft
 </body>
 </html>

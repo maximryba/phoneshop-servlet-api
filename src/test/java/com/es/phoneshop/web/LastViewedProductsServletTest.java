@@ -4,7 +4,11 @@ import com.es.phoneshop.model.product.ArrayListProductDao;
 import com.es.phoneshop.model.product.PriceHistory;
 import com.es.phoneshop.model.product.Product;
 import com.es.phoneshop.model.product.ProductDao;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,19 +16,12 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import jakarta.servlet.RequestDispatcher;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Currency;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -33,7 +30,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ProductListPageServletTest {
+public class LastViewedProductsServletTest {
+
     @Mock
     private HttpServletRequest request;
     @Mock
@@ -42,17 +40,15 @@ public class ProductListPageServletTest {
     private RequestDispatcher requestDispatcher;
     @Mock
     private ServletConfig servletConfig;
-
-    private ProductDao productDao;
-
     @Mock
     private HttpSession session;
 
-    private final ProductListPageServlet servlet = new ProductListPageServlet();
+    private ProductDao productDao;
+
+    private final LastViewedProductsServlet lastViewedProductsServlet = new LastViewedProductsServlet();
 
     @Before
     public void setup() throws ServletException {
-        servlet.init(servletConfig);
         productDao = ArrayListProductDao.getInstance();
         Currency usd = Currency.getInstance("USD");
         List<PriceHistory> priceHistories = new ArrayList<>();
@@ -63,43 +59,29 @@ public class ProductListPageServletTest {
         productDao.save(new Product( "test-phone", "Test", BigDecimal.valueOf(100), usd, 100, "test", priceHistories));
         productDao.save(new Product( "test-phone", "Test", BigDecimal.valueOf(100), usd, 100, "test", priceHistories));
         productDao.save(new Product( "test-phone", "Test", BigDecimal.valueOf(100), usd, 100, "test", priceHistories));
+        lastViewedProductsServlet.init(servletConfig);
         when(request.getRequestDispatcher(anyString())).thenReturn(requestDispatcher);
         when(request.getSession()).thenReturn(session);
     }
 
     @Test
     public void testDoGet() throws ServletException, IOException {
-        servlet.doGet(request, response);
-        verify(request).setAttribute(eq("products"), any());
+        lastViewedProductsServlet.doGet(request, response);
+        verify(request).setAttribute(eq(LastViewedProductsServlet.PRODUCTS), any());
         verify(requestDispatcher).forward(request, response);
     }
 
     @Test
-    public void testDoPostIfNoErrors() throws ServletException, IOException {
-        Locale locale = Locale.getDefault();
-        when(request.getLocale()).thenReturn(locale);
-        when(request.getParameter("quantity_2")).thenReturn("2");
-        when(request.getParameter("productId")).thenReturn("2");
-
-        servlet.doPost(request, response);
-
-        verify(request).setAttribute("success", true);
-        verify(request).setAttribute("description", "Test");
-    }
-
-    @Test
-    public void testDoPostIfErrors() throws ServletException, IOException {
-        Locale locale = Locale.getDefault();
-        when(request.getLocale()).thenReturn(locale);
-        Map<Long, String> errors = new HashMap<>();
-        errors.put(2L, "Not a number");
-        when(request.getParameter("quantity_2")).thenReturn("eee");
-        when(request.getParameter("productId")).thenReturn("2");
-
-
-        servlet.doPost(request, response);
-
-        verify(request).setAttribute("errors", errors);
+    public void testDoGetIfProductsAreNotNull() throws ServletException, IOException {
+        when(request.getSession()).thenReturn(session);
+        List<Long> ids = List.of(0L, 1L, 2L);
+        when(session.getAttribute(LastViewedProductsServlet.PRODUCTS)).thenReturn(ids);
+        List<Product> products = new ArrayList<>();
+        products.add(productDao.get(ids.get(0)));
+        products.add(productDao.get(ids.get(1)));
+        products.add(productDao.get(ids.get(2)));
+        lastViewedProductsServlet.doGet(request, response);
+        verify(request).setAttribute(LastViewedProductsServlet.PRODUCTS, products);
         verify(requestDispatcher).forward(request, response);
     }
 }
