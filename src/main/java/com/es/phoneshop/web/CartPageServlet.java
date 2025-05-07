@@ -41,13 +41,14 @@ public class CartPageServlet extends HttpServlet {
         String[] productIds = request.getParameterValues(PRODUCT_ID);
         String[] quantities = request.getParameterValues(QUANTITY);
         Map<Long, String> errors = new HashMap<>();
+        Cart cart = cartService.getCart(request);
         for (int i = 0; i < productIds.length; i++) {
             Long productId = Long.valueOf(productIds[i]);
             int quantity;
             try {
                 NumberFormat format = NumberFormat.getInstance(request.getLocale());
                 quantity = format.parse(quantities[i]).intValue();
-                Cart cart = cartService.getCart(request);
+
 
                 cartService.update(cart, productId, quantity);
             } catch (ParseException e) {

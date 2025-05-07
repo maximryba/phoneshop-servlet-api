@@ -34,8 +34,7 @@ public class DefaultOrderService implements OrderService {
        lock.readLock().lock();
        try {
         Order order = new Order();
-        order.setItems(cart.getItems().stream().map(CartItem::clone)
-                .toList());
+        order.setItems(cart.getItems().stream().map(CartItem::clone).toList());
         order.setSubtotal(cart.getTotalCost());
         order.setDeliveryCost(calculateDeliveryCost());
         order.setTotalCost(order.getSubtotal().add(order.getDeliveryCost()));

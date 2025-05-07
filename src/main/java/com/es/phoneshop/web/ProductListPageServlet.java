@@ -71,10 +71,9 @@ public class ProductListPageServlet extends HttpServlet {
             String productDescription = productDao.get(productId).getDescription();
             request.setAttribute("success", true);
             request.setAttribute("description", productDescription);
-            doGet(request, response);
         } else {
             request.setAttribute("errors", errors);
-            doGet(request, response);
         }
+        doGet(request, response);
     }
 }

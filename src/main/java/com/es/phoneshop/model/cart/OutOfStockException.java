@@ -5,7 +5,7 @@ import com.es.phoneshop.model.product.Product;
 public class OutOfStockException extends RuntimeException {
 
     public OutOfStockException(Product product, int stockRequested, int stockAvailable) {
-        super("Product " + product.getDescription() + " is not available, stock available " +
-                stockAvailable + ", and stock requested " + stockRequested);
+        super(String.format("Product ID %d (%s) is not available: requested stock %d, available stock %d",
+                product.getId(), product.getDescription(), stockRequested, stockAvailable));
     }
 }

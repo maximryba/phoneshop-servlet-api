@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class DefaultDosProtectionService implements DosProtectionService {
 
@@ -12,7 +13,7 @@ public class DefaultDosProtectionService implements DosProtectionService {
     private static final long THRESHOLD = 10;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    private final Map<String, Long> countMap = new ConcurrentHashMap<>();
+    private final Map<String, AtomicLong> countMap = new ConcurrentHashMap<>();
 
     public static DosProtectionService getInstance() {
         if (instance == null) {
@@ -31,16 +32,12 @@ public class DefaultDosProtectionService implements DosProtectionService {
 
     @Override
     public boolean isAllowed(String ip) {
-        Long count = countMap.get(ip);
-        if (count == null) {
-            count = 1L;
-        } else {
-            if (count > THRESHOLD) {
-                return false;
-            }
-            count++;
+        AtomicLong count = countMap.computeIfAbsent(ip, k -> new AtomicLong(0));
+        long currentCount = count.incrementAndGet();
+
+        if (currentCount > THRESHOLD) {
+            return false;
         }
-        countMap.put(ip, count);
         return true;
     }
 

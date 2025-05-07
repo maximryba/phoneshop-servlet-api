@@ -42,6 +42,9 @@ public class Cart implements Serializable {
 
     @Override
     public String toString() {
-        return "Cart[".concat(items.toString()).concat("]");
+        StringBuilder sb = new StringBuilder("Cart[");
+        sb.append(items);
+        sb.append("]");
+        return sb.toString();
     }
 }
