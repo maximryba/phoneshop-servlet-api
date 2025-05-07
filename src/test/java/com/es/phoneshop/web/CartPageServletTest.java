@@ -4,7 +4,11 @@ import com.es.phoneshop.model.product.ArrayListProductDao;
 import com.es.phoneshop.model.product.PriceHistory;
 import com.es.phoneshop.model.product.Product;
 import com.es.phoneshop.model.product.ProductDao;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,10 +16,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import jakarta.servlet.RequestDispatcher;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ProductListPageServletTest {
+public class CartPageServletTest {
     @Mock
     private HttpServletRequest request;
     @Mock
@@ -45,10 +45,11 @@ public class ProductListPageServletTest {
 
     private ProductDao productDao;
 
+
     @Mock
     private HttpSession session;
 
-    private final ProductListPageServlet servlet = new ProductListPageServlet();
+    private final CartPageServlet servlet = new CartPageServlet();
 
     @Before
     public void setup() throws ServletException {
@@ -70,21 +71,23 @@ public class ProductListPageServletTest {
     @Test
     public void testDoGet() throws ServletException, IOException {
         servlet.doGet(request, response);
-        verify(request).setAttribute(eq("products"), any());
+
+        verify(request).setAttribute(eq("cart"), any());
         verify(requestDispatcher).forward(request, response);
+
     }
 
     @Test
     public void testDoPostIfNoErrors() throws ServletException, IOException {
         Locale locale = Locale.getDefault();
         when(request.getLocale()).thenReturn(locale);
-        when(request.getParameter("quantity_2")).thenReturn("2");
-        when(request.getParameter("productId")).thenReturn("2");
+        when(request.getParameterValues("productId")).thenReturn(new String[]{"1", "2"});
+        when(request.getParameterValues("quantity")).thenReturn(new String[]{"10", "20"});
 
         servlet.doPost(request, response);
 
         verify(request).setAttribute("success", true);
-        verify(request).setAttribute("description", "Test");
+        verify(requestDispatcher).forward(request, response);
     }
 
     @Test
@@ -92,14 +95,12 @@ public class ProductListPageServletTest {
         Locale locale = Locale.getDefault();
         when(request.getLocale()).thenReturn(locale);
         Map<Long, String> errors = new HashMap<>();
-        errors.put(2L, "Not a number");
-        when(request.getParameter("quantity_2")).thenReturn("eee");
-        when(request.getParameter("productId")).thenReturn("2");
-
+        errors.put(1L, "Not a number");
+        when(request.getParameterValues("productId")).thenReturn(new String[]{"1", "2"});
+        when(request.getParameterValues("quantity")).thenReturn(new String[]{"eee", "20"});
 
         servlet.doPost(request, response);
 
         verify(request).setAttribute("errors", errors);
-        verify(requestDispatcher).forward(request, response);
     }
 }
