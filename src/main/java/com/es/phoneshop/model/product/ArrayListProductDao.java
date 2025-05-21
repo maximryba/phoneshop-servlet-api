@@ -2,6 +2,7 @@ package com.es.phoneshop.model.product;
 
 import com.es.phoneshop.model.general.AbstractDao;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -41,6 +42,35 @@ public class ArrayListProductDao extends AbstractDao<Product> implements Product
             }
         } finally {
             lock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public List<Product> advancedSearchProducts(String query, Integer minPrice, Integer maxPrice, String criteria) {
+        lock.readLock().lock();
+        try {
+            boolean checkAll = criteria.equals("all");
+
+            return this.items.stream()
+                    .filter(product -> product.getPrice() != null && product.getStock() > 0)
+                    .filter(product -> filterPrices(product, minPrice, maxPrice))
+                    .filter(product -> matchDescription(product, query, checkAll) == 1)
+                    .collect(Collectors.toList());
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    private boolean filterPrices(Product product, Integer minPrice, Integer maxPrice) {
+        if (maxPrice != null && minPrice != null) {
+            return (product.getPrice().compareTo(BigDecimal.valueOf(minPrice)) >= 0 &&
+                    product.getPrice().compareTo(BigDecimal.valueOf(maxPrice)) <= 0);
+        } else if (maxPrice != null) {
+            return product.getPrice().compareTo(BigDecimal.valueOf(maxPrice)) <= 0;
+        } else if (minPrice != null) {
+            return product.getPrice().compareTo(BigDecimal.valueOf(minPrice)) >= 0;
+        } else {
+            return true;
         }
     }
 

@@ -49,7 +49,6 @@ public class CartPageServlet extends HttpServlet {
                 NumberFormat format = NumberFormat.getInstance(request.getLocale());
                 quantity = format.parse(quantities[i]).intValue();
 
-
                 cartService.update(cart, productId, quantity);
             } catch (ParseException e) {
                 errors.put(productId, "Not a number");

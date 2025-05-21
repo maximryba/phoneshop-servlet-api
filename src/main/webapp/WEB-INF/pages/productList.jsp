@@ -7,6 +7,9 @@
 <tags:master pageTitle="Product List">
   <p>
     Welcome to Expert-Soft training!
+    <a href="${pageContext.servletContext.contextPath}/search?search-criteria=all">
+        Advanced search page
+    </a>
   </p>
   <c:if test="${not empty success}">
                         <p class="success">

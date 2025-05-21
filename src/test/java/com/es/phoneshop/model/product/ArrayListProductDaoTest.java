@@ -44,8 +44,8 @@ public class ArrayListProductDaoTest
     @Test
     public void testFindProductsWithoutQueryWithoutSortingHaveResults() {
         List<Product> products = productDao.findProducts("", null, SortOrder.ASC);
-        assertEquals("Description", products.get(0).getDescription());
-        assertEquals(11, products.size());
+        assertEquals("Test 1", products.get(0).getDescription());
+        assertEquals(2, products.size());
     }
 
     @Test
@@ -69,6 +69,12 @@ public class ArrayListProductDaoTest
         productDao.save(product);
         List<Product> productsAfterSave = productDao.findProducts("", SortField.DESCRIPTION, SortOrder.ASC);
         assertTrue(productsAfterSave.contains(product));
+    }
+
+    @Test
+    public void testAdvancedSearch() {
+        List<Product> products = productDao.advancedSearchProducts("test", 0, null, "all");
+        assertTrue(products.get(0).getDescription().contains("Test"));
     }
 
     @Test
